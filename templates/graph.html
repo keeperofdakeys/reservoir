@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{% block title %}{% endblock %}</title>
+  <link rel="stylesheet" type="text/css" href="{{ static_dir }}/graph.css">
+  <!--[if lte IE 8]><script language="javascript" type="text/javascript" src="{{ static_dir }}/excanvas.min.js"></script><![endif]-->
+  <script language="javascript" type="text/javascript" src="{{ static_dir }}/jquery.js"></script>
+  <script language="javascript" type="text/javascript" src="{{ static_dir }}/jquery.flot.js"></script>
+  <script language="javascript" type="text/javascript" src="{{ static_dir }}/graph.js"></script>
+</head>
+<body>
+  <ul>
+  {% for table in tables %}
+    <li><label>
+      <input class="input_checkbox" type="checkbox" name="{{ table.key }}">
+      {{ table.name }}
+    </label></li>
+  {% endfor %}
+  </ul>
+  <input type="submit" value="Generate Graph" onclick="setup_graph();">
+  <div id="plot">
+    <div id="box">
+    </div>
+  </div>
+</body>
+</html>
