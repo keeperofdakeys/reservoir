@@ -1,27 +1,35 @@
 import sqlite3
 from datetime import datetime
+import pytz
 
-def to_unixtime(dt):
-    epoch = datetime.fromtimestamp(0)
-    delta = dt - epoch
+def to_unixtime(date):
+    utcnow = date.astimezone(pytz.utc).replace(tzinfo=None)
+    epoch = datetime.utcfromtimestamp(0)
+    delta = utcnow - epoch
     return int(delta.total_seconds())
 
-def from_unixtime(time):
-    return datetime.fromtimestamp(time)
+def from_unixtime(time, timezone):
+    date = datetime.fromtimestamp(time, pytz.utc)
+    return date.astimezone(pytz.timezone(timezone))
 
 class Database():
     def __init__(self, filename):
         self.filename = filename
         conn = self.open()
+        conn.row_factory = sqlite3.Row
         cur = conn.cursor()
         cur.execute("SELECT count(*) FROM sqlite_master WHERE type='table' and name in (:table1, :table2);",
                     {"table1": "source", "table2": "source_area"})
         result = cur.fetchone()
         if result[0] != 2:
             raise AssertionError()
-        cur.execute("SELECT name, prop_name FROM source")
-        self.tables_dic = [{"key": res[0], "name": res[1]} for res in cur.fetchall()]
-        self.tables = [i["key"] for i in self.tables_dic]
+        cur.execute("""SELECT key, name, url, area, area_name, timezone FROM
+                source NATURAL JOIN place NATURAL JOIN source_area""")
+        results = cur.fetchall()
+        self.tables = dict(
+                (r["key"], dict((k, r[k]) for k in r.keys()))
+                for r in results
+                )
         for table in self.tables:
             cur.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name=:table;",
                     {"table": table})
@@ -32,7 +40,7 @@ class Database():
         cur.close()
         conn.commit()
         conn.close()
-
+    
     def open(self):
         return sqlite3.connect(self.filename, detect_types=sqlite3.PARSE_DECLTYPES)
 
@@ -64,31 +72,7 @@ class Database():
         conn.close()
 
     def load_data(self, table, date_range_start=None, date_range_end=None):
-        conn = self.open()
-        if date_range_start == None:
-            range_start = None
-        else:
-            range_start = to_unixtime(date_range_start)
-
-        if date_range_end == None:
-            range_end = None
-        else:
-            range_end = to_unixtime(date_range_end)
-
-        if range_start is not None and range_end is not None:
-            query = conn.execute("SELECT date, level FROM \"%s\" WHERE date BETWEEN :start AND :end;"
-                    % (table), {"start": start, "end": end})
-        elif range_start is not None:
-            query = conn.execute("SELECT date, level FROM \"%s\" WHERE date > :start;"
-                    % (table), {"start": range_start})
-        elif range_end is not None:
-            query = conn.execute("SELECT date, level FROM \"%s\" WHERE date < :end;"
-                    % (table), {"end": range_end})
-        else:
-            query = conn.execute("SELECT date, level FROM \"%s\";" % (table))
-
-        results = [(from_unixtime(r[0]),r[1]) for r in query.fetchall()]
-        return results
+        return [r for r in load_data_generator(table, date_range_start, date_range_end)]
 
     def load_data_generator(self, table, date_range_start=None, date_range_end=None):
         conn = self.open()
@@ -119,5 +103,5 @@ class Database():
             if len(result_group) == 0:
                 break
             for result in result_group:
-                yield [from_unixtime(result[0]),result[1]]
+                yield [from_unixtime(result[0], self.tables[table]["timezone"]),result[1]]
 

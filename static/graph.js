@@ -1,4 +1,3 @@
-
 function send_request(data_list, source) {
   var request = new XMLHttpRequest()
   request.open("GET", "".concat("data/", source, "/hello/3/"));
@@ -8,13 +7,23 @@ function send_request(data_list, source) {
 
   function open_data() {
     if( request.readyState == 4 ) {
-      data_list.push(
-          request.responseText.split("\n").map(parse_row)
-        );
+      data_list.push( {
+          label: source,
+          data: request.responseText.split("\n").map(parse_row)
+        });
       }
       draw_graph(data_list);
   }
 }
+
+function clear_checkboxes() {
+  var checkboxes = document.getElementsByClassName("input_checkbox");
+  for( var i=0; i<checkboxes.length; i++ ) {
+    var node = checkboxes.item(i);
+    node.checked = false;
+  }
+}
+
 
 
 function parse_row(cur_val, index, arr) {
@@ -47,8 +56,9 @@ function draw_graph(data_list) {
         fill: true
       }
     },
-   xaxis: { transform: function(x) { return x ; },
+    xaxis: { transform: function(x) { return x ; },
             tickFormatter: function(x) { return new Date(x * 1000); },
-            tickSize: 24*60*60 }
+            tickSize: 24*60*60 },
+    legend: { show: true, backgroundOpacity: 0.5, }
   });
 }

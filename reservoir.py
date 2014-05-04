@@ -18,7 +18,8 @@ env = Environment(loader=PackageLoader(__name__, 'templates'))
 def home():
     db = Database("update.db")
     template = env.get_template('graph.html')
-    return template.render(title="Reservoir Levels", tables=db.tables_dic,
+    return template.render(title="Reservoir Levels",
+            tables=[db.tables[table] for table in db.tables],
             static_dir="static")
 
 @app.route('/data/<table>/<data_type>/<start>/')
