@@ -6,19 +6,35 @@
   <!--[if lte IE 8]><script language="javascript" type="text/javascript" src="{{ static_dir }}/excanvas.min.js"></script><![endif]-->
   <script language="javascript" type="text/javascript" src="{{ static_dir }}/jquery.js"></script>
   <script language="javascript" type="text/javascript" src="{{ static_dir }}/jquery.flot.js"></script>
+  <script language="javascript" type="text/javascript" src="{{ static_dir }}/moment.js"></script>
   <script language="javascript" type="text/javascript" src="{{ static_dir }}/graph.js"></script>
 </head>
 <body>
   <ul>
   {% for table in tables %}
     <li><label>
-      <input class="input_checkbox" type="checkbox" name="{{ table.key }}">
+      <input class="input_checkbox" type="checkbox" data-key="{{ table.key }}"
+      data-name="{{ table.name }}">
       {{ table.name }}
     </label></li>
   {% endfor %}
   </ul>
   <input type="submit" value="Generate Graph" onclick="setup_graph();">
   <input type="submit" value="Clear Checkboxes" onclick="clear_checkboxes();">
+  <select id="period" onchange="custom_fields(this)">
+    <option value="forever">Forever</option>
+    <option value="year">Past Year</option>
+    <option value="six_months">Past Six Months</option>
+    <option value="month">Past Month</option>
+    <option value="week">Past Week</option>
+    <option value="custom">Custom Range</option>
+  </select>
+  <div id="custom_range">
+    <label id="date_error"></label><br>
+    <label>Format: yyyy-mm-dd</label><br>
+    <label><input type="text" id="range_start">Range Start</label><br>
+    <label><input type="text" id="range_end">Range End</label><br>
+  </div>
   <div id="plot">
   </div>
   <div id="plot_legend">

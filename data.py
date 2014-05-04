@@ -88,7 +88,7 @@ class Database():
 
         if range_start is not None and range_end is not None:
             query = conn.execute("SELECT date, level FROM \"%s\" WHERE date BETWEEN :start AND :end;"
-                    % (table), {"start": start, "end": end})
+                    % (table), {"start": range_start, "end": range_end})
         elif range_start is not None:
             query = conn.execute("SELECT date, level FROM \"%s\" WHERE date > :start;"
                     % (table), {"start": range_start})
@@ -98,10 +98,11 @@ class Database():
         else:
             query = conn.execute("SELECT date, level FROM \"%s\";" % (table))
        
+        timezone = self.tables[table]["timezone"]
         while True:
             result_group = query.fetchmany(20)
             if len(result_group) == 0:
                 break
             for result in result_group:
-                yield [from_unixtime(result[0], self.tables[table]["timezone"]),result[1]]
+                yield [from_unixtime(result[0], timezone),result[1]]
 
