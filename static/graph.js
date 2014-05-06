@@ -30,12 +30,13 @@ function send_request(data_list, source, name, date_range) {
   }
 }
 
-function clear_checkboxes() {
+function clear_view() {
   var checkboxes = document.getElementsByClassName("input_checkbox");
   for( var i=0; i<checkboxes.length; i++ ) {
     var node = checkboxes.item(i);
     node.checked = false;
   }
+  $('#plot').empty()
 }
 
 function custom_fields(element) {
@@ -73,13 +74,13 @@ function get_range(period) {
 
     case "custom":
       start_text = document.getElementById("range_start").value;
-      start = moment(start_text, "YYYY-MM-DD");
+      start = moment(start_text, "DD-MM-YYYY");
       if( !start.isValid() ) {
         document.getElementById("date_error").innerHTML = "Start Date Error";
         return undefined;
       }
       end_text = document.getElementById("range_end").value;
-      end = moment(end_text, "YYYY-MM-DD");
+      end = moment(end_text, "DD-MM-YYYY");
       if( !end.isValid() ) {
         document.getElementById("date_error").innerHTML = "End Date Error";
         return undefined;
@@ -89,9 +90,12 @@ function get_range(period) {
   return [start, end];
 }
 
+var time_offset = moment().zone()*60;
+
 function parse_row(cur_val, index, arr) {
   items = cur_val.split(",");
-  items[0] = parseInt(items[0]);
+  // Account for timezone, by adding negative timezone offset.
+  items[0] = parseInt(items[0]) - time_offset;
   items[1] = parseFloat(items[1]);
   return items;
 }
@@ -125,9 +129,48 @@ function draw_graph(data_list) {
         fill: true
       }
     },
-    xaxis: { transform: function(x) { return x ; },
-            tickFormatter: function(x) { return new Date(x * 1000); },
-            tickSize: 24*60*60 },
-    legend: { show: true, backgroundOpacity: 0.5, }
+    xaxis: { transform: function(x) { return x; },
+            tickFormatter: tick_formatter, // function(x) { return moment.unix(x + time_offset)//.toDate(); },
+              //.format("DD/MM/YY "); },
+            //tickSize: 24*60*60 },
+            ticks: tick_generator },
+    legend: { show: true, backgroundOpacity: 0.5, },
+    grid: {
+      backgroundColor: "#FFFFFF"
+    }
   });
+}
+ 
+function tick_generator(axis) {
+  var ticks = [];
+  var time_step = 24*60*60;
+  var step_num = 10;
+  var min = axis.min - (axis.min % time_step);
+  var max = axis.max - (axis.max % time_step) + 1;
+  var time_range = Math.ceil((max - min) / time_step);
+  var new_step;
+  if( (max - min) > time_step * step_num ) {
+    new_step = Math.ceil(time_range / step_num)*time_step;
+  } else {
+    new_step = time_step;
+  }
+  // Use these values for labels, code here because this runs once.
+  axis.new_min = min;
+  axis.new_step = new_step;
+  // Make ticks for every day.
+  for( var i=min; i<max; i+=time_step ) {
+    ticks.push(i);
+  }
+  return ticks;
+}
+
+function tick_formatter(value, axis) {
+  // Only allow labels as calculated in tick_generator, so only ten ever
+  // show.
+  if( (axis.new_min + value) % axis.new_step !== 0 ) {
+    return "";
+  }
+  // Data is no longer in UTC but local timezone. Moment expects UTC, so add
+  // the negative timezone offset (bloody javascript).
+  return moment.unix(value + time_offset).format("DD/MM/YY ");
 }

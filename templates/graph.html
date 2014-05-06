@@ -13,34 +13,43 @@
   <script language="javascript" type="text/javascript" src="{{ static_dir }}/graph.js"></script>
 </head>
 <body>
-  <ul>
-  {% for table in tables %}
-    <li><label>
-      <input class="input_checkbox" type="checkbox" data-key="{{ table.key }}"
-      data-name="{{ table.name }}">
-      {{ table.name }}
-    </label></li>
-  {% endfor %}
-  </ul>
-  <input type="submit" value="Generate Graph" onclick="setup_graph();">
-  <input type="submit" value="Clear Checkboxes" onclick="clear_checkboxes();">
-  <select id="period" onchange="custom_fields(this)">
-    <option value="forever">Forever</option>
-    <option value="year">Past Year</option>
-    <option value="six_months">Past Six Months</option>
-    <option value="month">Past Month</option>
-    <option value="week">Past Week</option>
-    <option value="custom">Custom Range</option>
-  </select>
-  <div id="custom_range">
-    <label id="date_error"></label><br>
-    <label>Format: yyyy-mm-dd</label><br>
-    <label><input type="text" id="range_start">Range Start</label><br>
-    <label><input type="text" id="range_end">Range End</label><br>
+  <div class="header">
+    <h2>Reservoir Levels</h2>
   </div>
-  <div id="plot">
+  <div id="content">
+    <div id="checkbox_container">
+    <div id="checkboxes">
+      {% for table in tables %}
+        <label>
+          <input class="input_checkbox" type="checkbox" data-key="{{ table.key }}"
+          data-name="{{ table.name }}">
+          {{ table.name }}
+        </label>
+      {% endfor %}
+    </div>
+    </div>
+    <div id="shadow_catch">
+    </div>
+    <input type="submit" value="Generate Graph" onclick="setup_graph();">
+    <input type="submit" value="Clear All" onclick="clear_view();">
+    <select id="period" onchange="custom_fields(this)">
+      <option value="forever">Forever</option>
+      <option value="year">Past Year</option>
+      <option value="six_months">Past Six Months</option>
+      <option value="month">Past Month</option>
+      <option value="week">Past Week</option>
+      <option value="custom">Custom Range</option>
+    </select>
+    <div id="custom_range">
+      <label id="date_error"></label><br>
+      <label>Format: dd-mm-yyyy</label><br>
+      <label><input type="text" id="range_start">Range Start</label><br>
+      <label><input type="text" id="range_end">Range End</label><br>
+    </div>
   </div>
-  <div id="plot_legend">
+  <div id="plot_container">
+    <div id="plot">
+    </div>
   </div>
 </body>
 </html>
