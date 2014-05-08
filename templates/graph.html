@@ -14,32 +14,44 @@
 </head>
 <body>
   <div class="header">
+    <div class="left">
+      <input id="hide" type="submit" value="HIDE" onclick="hide();">
+      <input id="show" type="submit" value="SHOW" onclick="show();">
+    </div>
     <h2>Reservoir Levels</h2>
   </div>
   <div id="content">
     <div id="checkbox_container">
     <div id="checkboxes">
-      {% for table in tables %}
-        <label>
-          <input class="input_checkbox" type="checkbox" data-key="{{ table.key }}"
-          data-name="{{ table.name }}">
-          {{ table.name }}
-        </label>
+      {% for s_k, state in states|dictsort %}
+        <h4>{{ state.state_name }}:</h5>
+        {% for a_k, area in state.areas|dictsort %}
+        <div class="area">
+          <h5>{{ area.area_name }}:</h5>
+          {% for key in area["keys"] %}
+          <label class="hover">
+            <input class="input_checkbox" type="checkbox" data-key="{{ tables[key].key }}"
+            data-name="{{ tables[key].name }}">
+            {{ tables[key].name }}
+          </label>
+          {% endfor %}
+        </div>
+        {% endfor %}
       {% endfor %}
     </div>
     </div>
-    <div id="shadow_catch">
+    <div class="buttons">
+      <input type="submit" value="Generate Graph" onclick="setup_graph();">
+      <input type="submit" value="Clear All" onclick="clear_view();">
+      <select id="period" onchange="custom_fields(this)">
+        <option value="forever">Forever</option>
+        <option value="year">Past Year</option>
+        <option value="six_months">Past Six Months</option>
+        <option value="month">Past Month</option>
+        <option value="week">Past Week</option>
+        <option value="custom">Custom Range</option>
+      </select>
     </div>
-    <input type="submit" value="Generate Graph" onclick="setup_graph();">
-    <input type="submit" value="Clear All" onclick="clear_view();">
-    <select id="period" onchange="custom_fields(this)">
-      <option value="forever">Forever</option>
-      <option value="year">Past Year</option>
-      <option value="six_months">Past Six Months</option>
-      <option value="month">Past Month</option>
-      <option value="week">Past Week</option>
-      <option value="custom">Custom Range</option>
-    </select>
     <div id="custom_range">
       <label id="date_error"></label><br>
       <label>Format: dd-mm-yyyy</label><br>

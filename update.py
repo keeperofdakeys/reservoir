@@ -5,9 +5,14 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import pytz
 from urllib.request import urlopen
+from random import randint
+from time import sleep
 
 def main():
     db = Database("update.db")
+    db.update()
+    count = 1
+    total = len(db.tables)
     for table in db.tables:
         url = db.tables[table]['url']
         timezone = db.tables[table]['timezone']
@@ -20,13 +25,15 @@ def main():
                         tzinfo=pytz.timezone(timezone)
                         )
                 value = float(raw_datum[1])
-                datum = (table, date, value)
+                datum = (date, value)
             except ValueError:
                 continue
-            if datum[1].minute != 0:
-                continue
             data.append(datum)
-        db.store_data(data)
+        db.store_data(data, table)
+        sleep(5)
+        print ("%d / %d is complete" %(count, total))
+        count += 1
+
 
 if __name__ == "__main__":
     main()

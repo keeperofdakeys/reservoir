@@ -8,10 +8,10 @@
 }
 
 #plot_container {
-  margin-top: 10px;
+  margin: 10px;
+  padding: 10px;
   background: #dcdcdc;
   box-shadow: 0px 0px 7px;
-  padding: 10px;
 }
 
 #custom_range {
@@ -23,23 +23,21 @@
   padding: 2px;
 }
 
-#checkboxes :hover {
+.hover:hover {
   background: #c4c4c4;
-  padding: 2px;
 }
 
 #checkboxes {
   display: inline-block;
   padding: 3px;
-  margin: 5px 0px;
+  margin: 0px;
+  margin-bottom: 5px;
   text-align: center;
 }
 
 #checkbox_container {
   text-align: center;
 }
-
-
 
 input[type=checkbox] {
 
@@ -55,6 +53,7 @@ body {
 .header {
   background: #dcdcdc;
   margin: 0px;
+  margin-bottom: 10px;
   border: 0px;
   padding: 5px;
   box-shadow: 0px 0px 7px;
@@ -62,11 +61,23 @@ body {
 
 
 h2 {
-  font-size: 2em;
+  font-size: 3em;
   margin: 0px;
   border: 0px;
   padding: 0px;
   text-align: center;
+  font-weight: normal;
+}
+
+h4 {
+  margin: 3px;
+  display: block;
+  font-size: 1.2em;
+}
+
+h5 {
+  display: inline;
+  font-size: inherit;
 }
 
 #content {
@@ -76,4 +87,27 @@ h2 {
 
 .tickLabel {
   font-size: 80%;
+}
+
+
+.buttons {
+  text-align: center;
+  display: inline-block;
+}
+
+.left {
+  float: left;
+  width: 3em;
+}
+
+#hide {
+  display: initial;
+}
+
+#show {
+  display: none;
+}
+
+.area {
+  margin: 5px 0px;
 }

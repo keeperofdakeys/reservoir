@@ -19,7 +19,8 @@ def home():
     db = Database("update.db")
     template = env.get_template('graph.html')
     return template.render(title="Reservoir Levels",
-            tables=[db.tables[table] for table in db.tables],
+            #tables=[db.tables[table] for table in db.tablesl],
+            tables=db.tables, areas=db.areas, states=db.states,
             static_dir="static")
 
 @app.route("/data/<table>/start/<int:end>/", defaults={"start": None})
@@ -52,5 +53,5 @@ def data(table, start, end):
     return value
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")
 

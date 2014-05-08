@@ -1,3 +1,6 @@
+var REQUESTS = Object.create(null);
+var REQUEST_COUNT = 0;
+
 function send_request(data_list, source, name, date_range) {
   if( date_range.length < 2 ) {
     start_time = "start";
@@ -12,7 +15,8 @@ function send_request(data_list, source, name, date_range) {
       end_time = end_time.unix();
     }
   }
-  var request = new XMLHttpRequest()
+  var request = new XMLHttpRequest();
+  REQUESTS[request] = request;
   request.open("GET", 
       "".concat("data/", source, "/", start_time, "/", end_time, "/")
       );
@@ -26,14 +30,25 @@ function send_request(data_list, source, name, date_range) {
           data: request.responseText.split("\n").map(parse_row)
         });
       }
+      REQUEST_COUNT--;
       draw_graph(data_list);
   }
 }
 
+function clear_requests() {
+  for( var request in REQUESTS ) {
+    REQUESTS[request].abort();
+    delete REQUESTS[request];
+  }
+}
+
 function clear_view() {
-  var checkboxes = document.getElementsByClassName("input_checkbox");
+  var checkboxes = document.getElementsByTagName("input");
   for( var i=0; i<checkboxes.length; i++ ) {
     var node = checkboxes.item(i);
+    if( node.type !== "checkbox" ) {
+      continue;
+    }
     node.checked = false;
   }
   $('#plot').empty()
@@ -101,26 +116,35 @@ function parse_row(cur_val, index, arr) {
 }
 
 function setup_graph() {
+  clear_requests();
   var period = document.getElementById("period").value;
   var date_range = get_range(period);
   if( date_range === undefined ) {
     return;
   }
+  REQUEST_COUNT = 0;
   var sources = [];
   var data_list = [];
-  var checkboxes = document.getElementsByClassName("input_checkbox");
+  var checkboxes = document.getElementsByTagName("input");
   for( var i=0; i<checkboxes.length; i++ ) {
     var node = checkboxes.item(i);
+    if( node.type !== "checkbox" ) {
+      continue;
+    }
     var table_key = node.getAttribute("data-key");
     var table_name = node.getAttribute("data-name");
     if( !node.checked ) {
       continue;
     }
     send_request(data_list, table_key, table_name, date_range);
+    REQUEST_COUNT++;
   }
 }
 
 function draw_graph(data_list) {
+  if( REQUEST_COUNT != 0 ) {
+    return;
+  }
   $.plot("#plot", data_list, {
     series: {
       points: {
@@ -173,4 +197,22 @@ function tick_formatter(value, axis) {
   // Data is no longer in UTC but local timezone. Moment expects UTC, so add
   // the negative timezone offset (bloody javascript).
   return moment.unix(value + time_offset).format("DD/MM/YY ");
+}
+
+function hide() {
+  var checkboxes = document.getElementById("content");
+  var hide_button = document.getElementById("hide");
+  var show_button = document.getElementById("show");
+  checkboxes.style.display = "none";
+  hide_button.style.display = "none";
+  show_button.style.display = "initial";
+}
+
+function show() {
+  var checkboxes = document.getElementById("content");
+  var hide_button = document.getElementById("hide");
+  var show_button = document.getElementById("show");
+  checkboxes.style.display = "block";
+  hide_button.style.display = "initial";
+  show_button.style.display = "none";
 }
