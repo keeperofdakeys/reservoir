@@ -5,18 +5,23 @@ from flask import Flask, abort
 from werkzeug.contrib.cache import FileSystemCache
 from jinja2 import Environment, PackageLoader
 from csv_lib import get_csv
+import os
 
 app = Flask(__name__)
 
 # Sed timeout for 24 hours, since data doesn't change much.
 CACHE_TIMEOUT = 24 * 60 * 60
-cache = FileSystemCache("cache", threshold=100, default_timeout=CACHE_TIMEOUT, mode=600)
+HERE = os.path.dirname(__file__)
+CACHE_DIR=os.path.join(HERE, "cache")
+DATABASE=os.path.join(HERE, "update.db")
+TEMPLATES=os.path.join(HERE, "templates")
+cache = FileSystemCache(CACHE_DIR, threshold=100, default_timeout=CACHE_TIMEOUT, mode=600)
 
-env = Environment(loader=PackageLoader(__name__, 'templates'))
+env = Environment(loader=PackageLoader(__name__, "templates"))
 
 @app.route("/")
 def home():
-    db = Database("update.db")
+    db = Database(DATABASE)
     template = env.get_template('graph.html')
     return template.render(title="Reservoir Levels",
             #tables=[db.tables[table] for table in db.tablesl],
@@ -28,7 +33,7 @@ def home():
 @app.route("/data/<table>/start/end/", defaults={"start": None, "end": None})
 @app.route("/data/<table>/<int:start>/<int:end>/")
 def data(table, start, end):
-    db = Database("update.db")
+    db = Database(DATABASE)
     if table not in db.tables:
         abort(404)
 
