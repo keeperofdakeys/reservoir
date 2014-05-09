@@ -80,7 +80,7 @@ class Database():
         cur = conn.cursor()
         cur.execute("SELECT MAX(date) FROM \"%s\";" % (table))
         result = cur.fetchone()
-        if result is None:
+        if result[0] is None:
             last_time = 0
         else:
             last_time = result[0]
