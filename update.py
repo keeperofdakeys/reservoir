@@ -7,9 +7,13 @@ import pytz
 from urllib.request import urlopen
 from random import randint
 from time import sleep
+import os
+
+HERE = os.path.dirname(__file__)
+DATABASE=os.path.join(HERE, "update.db")
 
 def main():
-    db = Database("update.db")
+    db = Database(DATABASE)
     db.update()
     count = 1
     total = len(db.tables)
