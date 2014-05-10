@@ -28,7 +28,7 @@
         {% for a_k, area in state.areas|dictsort %}
         <div class="area">
           <h5>{{ area.area_name }}:</h5>
-          {% for key in area["keys"] %}
+          {% for key in area["keys"]|sort %}
           <label class="hover">
             <input class="input_checkbox" type="checkbox" data-key="{{ tables[key].key }}"
             data-name="{{ tables[key].name }}">

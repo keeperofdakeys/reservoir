@@ -9,8 +9,7 @@ import os
 
 app = Flask(__name__)
 
-# Sed timeout for 24 hours, since data doesn't change much.
-CACHE_TIMEOUT = 24 * 60 * 60
+CACHE_TIMEOUT = 60 * 60
 HERE = os.path.dirname(__file__)
 CACHE_DIR=os.path.join(HERE, "cache")
 DATABASE=os.path.join(HERE, "update.db")
@@ -58,5 +57,5 @@ def data(table, start, end):
     return value
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")
 

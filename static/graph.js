@@ -1,45 +1,12 @@
-var REQUESTS = Object.create(null);
-var REQUEST_COUNT = 0;
-
-function send_request(data_list, source, name, date_range) {
-  if( date_range.length < 2 ) {
-    start_time = "start";
-    end_time = "end";
-  } else {
-    start_time = date_range[0];
-    if( start_time !== "start" ) {
-      start_time = start_time.unix();
-    }
-    end_time = date_range[1];
-    if( end_time !== "end" ) {
-      end_time = end_time.unix();
-    }
-  }
-  var request = new XMLHttpRequest();
-  REQUESTS[request] = request;
-  request.open("GET", 
-      "".concat("data/", source, "/", start_time, "/", end_time, "/")
-      );
-  request.onload = open_data;
-  request.send();
-
-  function open_data() {
-    if( request.readyState === 4 ) {
-      data_list.push( {
-          label: name,
-          data: request.responseText.split("\n").map(parse_row)
-        });
-      }
-      REQUEST_COUNT--;
-      draw_graph(data_list);
-  }
-}
+var REQUESTS = [];
+var COUNT = 0;
+var TOTAL = 0;
 
 function clear_requests() {
-  for( var request in REQUESTS ) {
-    REQUESTS[request].abort();
-    delete REQUESTS[request];
+  for( var i=0; i<REQUESTS.length; i++ ) {
+    REQUESTS[i].abort();
   }
+  REQUESTS = [];
 }
 
 function clear_view() {
@@ -115,6 +82,46 @@ function parse_row(cur_val, index, arr) {
   return items;
 }
 
+function send_request(data_list, source, name, date_range) {
+  if( date_range.length < 2 ) {
+    start_time = "start";
+    end_time = "end";
+  } else {
+    start_time = date_range[0];
+    if( start_time !== "start" ) {
+      start_time = start_time.unix();
+    }
+    end_time = date_range[1];
+    if( end_time !== "end" ) {
+      end_time = end_time.unix();
+    }
+  }
+  var request = new XMLHttpRequest();
+  REQUESTS.push(request);
+  request.open("GET", 
+      "".concat("data/", source, "/", start_time, "/", end_time, "/")
+      );
+  request.onreadystatechange = open_data;
+  request.send();
+
+  function open_data() {
+    if( request.readyState === 4 &&
+        ( request.status >= 200 && request.status <= 400 ) ) {
+      var response = request.responseText.split("\n");
+      var data = [];
+      for( var i=0; i<response.length; i++ ) {
+        data.push(parse_row(response[i]));
+      }
+      data_list.push( {
+          label: name,
+          data: data
+        });
+      COUNT++;
+      draw_graph(data_list);
+    }
+  }
+}
+
 function setup_graph() {
   clear_requests();
   var period = document.getElementById("period").value;
@@ -122,10 +129,11 @@ function setup_graph() {
   if( date_range === undefined ) {
     return;
   }
-  REQUEST_COUNT = 0;
   var sources = [];
   var data_list = [];
   var checkboxes = document.getElementsByTagName("input");
+  COUNT = 0;
+  TOTAL = 0;
   for( var i=0; i<checkboxes.length; i++ ) {
     var node = checkboxes.item(i);
     if( node.type !== "checkbox" ) {
@@ -136,13 +144,13 @@ function setup_graph() {
     if( !node.checked ) {
       continue;
     }
+    TOTAL++;
     send_request(data_list, table_key, table_name, date_range);
-    REQUEST_COUNT++;
   }
 }
 
 function draw_graph(data_list) {
-  if( REQUEST_COUNT != 0 ) {
+  if( COUNT < TOTAL ) {
     return;
   }
   $.plot("#plot", data_list, {
