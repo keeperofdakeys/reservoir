@@ -112,3 +112,7 @@ h5 {
 .area {
   margin: 5px 0px;
 }
+
+.bold {
+  font-weight: bold;
+}

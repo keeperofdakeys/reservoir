@@ -162,14 +162,65 @@ function draw_graph(data_list) {
       }
     },
     xaxis: { transform: function(x) { return x; },
-            tickFormatter: tick_formatter, // function(x) { return moment.unix(x + time_offset)//.toDate(); },
-              //.format("DD/MM/YY "); },
-            //tickSize: 24*60*60 },
+            tickFormatter: tick_formatter,
             ticks: tick_generator },
     legend: { show: true, backgroundOpacity: 0.5, },
     grid: {
+      hoverable: true,
       backgroundColor: "#FFFFFF"
     }
+  });
+  function showTooltip(x, y, contents) {
+    var tooltip = $('<div id="tooltip">' + contents + '</div>');
+    tooltip.css( {
+      position: 'absolute',
+      display: 'none',
+      border: '1px solid #000',
+      padding: '2px',
+      'background-color': '#fee',
+      opacity: 0.80,
+      "font-size": "0.8em"
+    });
+    var x_offset = -25;
+    var y_offset = 5;
+    var tip_width = 200;
+    var ie = document.all && !window.opera;
+    var iebody = (document.compatMode == 'CSS1Compat')
+                 ? document.documentElement
+                 : document.body;
+    var scrollLeft = ie ? iebody.scrollLeft : window.pageXOffset;
+    var scrollTop = ie ? iebody.scrollTop : window.pageYOffset;
+    var docWidth = ie ? iebody.clientWidth - 15 : window.innerWidth - 15;
+    var docHeight = ie ? iebody.clientHeight - 15 : window.innerHeight - 8;
+
+    // account for right edge
+    tooltip.css({ top: y + y_offset });
+    tooltip.css({ "min-width": tip_width/2 });
+    tooltip.css({ "max-width": tip_width });
+
+    if (x + tip_width + scrollLeft > docWidth) {
+        tooltip.css({ right: docWidth - x + x_offset });
+    } else {
+        tooltip.css({ left: x + x_offset });
+    }
+    tooltip.appendTo("body").fadeIn(0);
+  }
+
+  var previousPoint = null;
+  $("#plot").bind("plothover", function (event, pos, item) {
+      $("#x").text(pos.x.toFixed(2));
+      $("#y").text(pos.y.toFixed(2));
+      if (item) {
+        $("#tooltip").remove();
+        var x = item.datapoint[0].toFixed(2),
+          y = item.datapoint[1].toFixed(2);
+        
+        showTooltip(item.pageX, item.pageY,
+          "<span class=\"bold\">" + item.series.label + ":</span><br>"
+          + date_formatter(parseInt(x)) + "<br>" + y + " m");
+      } else {
+        $("#tooltip").remove();
+      }
   });
 }
  
@@ -196,6 +247,12 @@ function tick_generator(axis) {
   return ticks;
 }
 
+function date_formatter(date) {
+  // Data is no longer in UTC but local timezone. Moment expects UTC, so add
+  // the negative timezone offset (bloody javascript).
+  return moment.unix(date + time_offset).format("DD/MM/YYYY HH:mm:ss");
+}
+
 function tick_formatter(value, axis) {
   // Only allow labels as calculated in tick_generator, so only ten ever
   // show.
@@ -204,7 +261,7 @@ function tick_formatter(value, axis) {
   }
   // Data is no longer in UTC but local timezone. Moment expects UTC, so add
   // the negative timezone offset (bloody javascript).
-  return moment.unix(value + time_offset).format("DD/MM/YY ");
+  return moment.unix(value + time_offset).format("DD/MM/YY");
 }
 
 function hide() {
