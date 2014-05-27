@@ -270,7 +270,7 @@ function hide() {
   var show_button = document.getElementById("show");
   checkboxes.style.display = "none";
   hide_button.style.display = "none";
-  show_button.style.display = "initial";
+  show_button.style.display = "inline";
 }
 
 function show() {
@@ -278,6 +278,6 @@ function show() {
   var hide_button = document.getElementById("hide");
   var show_button = document.getElementById("show");
   checkboxes.style.display = "block";
-  hide_button.style.display = "initial";
+  hide_button.style.display = "inline";
   show_button.style.display = "none";
 }

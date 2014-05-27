@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import pytz
 from urllib.request import urlopen
+import urllib
 from random import randint
 from time import sleep
 import os
@@ -20,7 +21,10 @@ def main():
     for table in db.tables:
         url = db.tables[table]['url']
         timezone = db.tables[table]['timezone']
-        site = BeautifulSoup(urlopen(url))
+        try:
+          site = BeautifulSoup(urlopen(url))
+        except urllib.error.HTTPError:
+          print ("error on %s" %(url))
         data = []
         for tr in site('tr'):
             raw_datum = tr.text.strip().split('\n')

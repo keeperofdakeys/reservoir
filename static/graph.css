@@ -102,7 +102,7 @@ h5 {
 }
 
 #hide {
-  display: initial;
+  display: inline;
 }
 
 #show {
