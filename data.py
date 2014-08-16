@@ -135,7 +135,7 @@ class Database():
        
         timezone = self.tables[table]["timezone"]
         while True:
-            result_group = query.fetchmany(20)
+            result_group = query.fetchmany(100)
             if len(result_group) == 0:
                 break
             for result in result_group:
