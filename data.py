@@ -1,5 +1,6 @@
-import sqlite3
 from datetime import datetime, timedelta
+import sqlite3
+import numpy
 import pytz
 
 def to_unixtime(date):
@@ -106,38 +107,77 @@ class Database():
         conn.close()
 
     def load_data(self, table, date_range_start=None, date_range_end=None):
-        return [r for r in load_data_generator(table, date_range_start, date_range_end)]
-
-    def load_data_generator(self, table, date_range_start=None, date_range_end=None):
         conn = self.open()
         if date_range_start == None:
             range_start = None
-        else:
+        elif not isinstance(date_range_start, int):
             range_start = to_unixtime(date_range_start)
+        else:
+            range_start = date_range_start
 
         if date_range_end == None:
             range_end = None
-        else:
+        elif not isinstance(date_range_end, int):
             range_end = to_unixtime(date_range_end)
-
-        if range_start is not None and range_end is not None:
-            query = conn.execute("""SELECT date, level FROM \"%s\" WHERE date
-                    BETWEEN :start AND :end ORDER BY date;"""
-                    % (table), {"start": range_start, "end": range_end})
-        elif range_start is not None:
-            query = conn.execute("SELECT date, level FROM \"%s\" WHERE date > :start ORDER BY date;"
-                    % (table), {"start": range_start})
-        elif range_end is not None:
-            query = conn.execute("SELECT date, level FROM \"%s\" WHERE date < :end ORDER BY date;"
-                    % (table), {"end": range_end})
         else:
-            query = conn.execute("SELECT date, level FROM \"%s\" ORDER BY date;" % (table))
-       
-        timezone = self.tables[table]["timezone"]
+            range_end = date_range_end
+        
+        query_suffix = ""
+        query_parameters = {}
+        if range_start is not None and range_end is not None:
+            query_suffix = "WHERE date BETWEEN :start AND :end ORDER BY date;"
+            query_parameters =  {"start": range_start, "end": range_end}
+        elif range_start is not None:
+            query_suffix = "WHERE date > :start ORDER BY date;"
+            query_parameters = {"start": range_start}
+        elif range_end is not None:
+            query_suffix = "WHERE date < :end ORDER BY date;"
+            query_parameters = {"end": range_end}
+        else:
+            query_suffix = "ORDER BY date;"
+        query_prefixes = ["MIN(date)", "MAX(date)", "date, level"]
+        queries = []
+        for query_prefix in query_prefixes:
+            queries.append( conn.execute("SELECT %s FROM \"%s\" %s"
+                % (query_prefix, table, query_suffix),
+                query_parameters
+            ) )
+        # Return min and max dates. Client must use __next__ manually for these.
+        yield queries[0].fetchone()
+        yield queries[1].fetchone()
+
         while True:
-            result_group = query.fetchmany(100)
+            result_group = queries[2].fetchmany(100)
             if len(result_group) == 0:
                 break
-            for result in result_group:
-                yield [from_unixtime(result[0], timezone),result[1]]
+            yield result_group
 
+def get_data(database, table, date_start=None, date_end=None):
+    timezone = database.tables[table]["timezone"]
+    if date_end is None or date_end > datetime.now(pytz.timezone(timezone)):
+        date_end = datetime.now(pytz.timezone(timezone))
+    results = database.load_data(table, date_start, date_end)
+    try:
+        min_val = results.__next__()
+        max_val = results.__next__()
+    except StopIteration:
+        return []
+    data_period = get_data_period(min_val[0], max_val[0]).total_seconds()
+    data = []
+    last_time = 0
+    for raw_data in results:
+        #proc_data = numpy.array(raw_data)
+        for item in raw_data:
+            if item[0] - last_time < data_period:
+                continue
+            data.append(item)
+            last_time = item[0]
+    return data
+
+def data_to_dict(data):
+    return dict((item[0], item[1]) for item in data)
+
+def get_data_period(time_start, time_end):
+    time_range = timedelta(seconds=(time_end - time_start))
+    data_period = 4 * (time_range / timedelta(weeks=4)) * timedelta(hours=1)
+    return data_period

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from datetime import datetime, timedelta
-from data import Database, from_unixtime
+from data import Database, from_unixtime, get_data, data_to_dict
 from flask import Flask, abort, json
 from werkzeug.contrib.cache import FileSystemCache
 from jinja2 import Environment, PackageLoader
-from csv_lib import get_csv, get_dict
+from csv_lib import get_csv
 import os
 
 app = Flask(__name__)
@@ -31,16 +31,18 @@ def home():
 @app.route("/data/<tables>/<int:start>/end/", defaults={"end": None})
 @app.route("/data/<tables>/start/end/", defaults={"start": None, "end": None})
 @app.route("/data/<tables>/<int:start>/<int:end>/")
-def data(tables, start, end):
+def http_json(tables, start, end):
     db = Database(DATABASE)
     table_list = tables.split("+")
     table_set = set()
     table_data = dict()
     for table in table_list:
+        import time
+        print(time.time())
         if table in db.tables:
             table_set.add(table)
             data = get_data(db, table, start, end)
-            table_data[table] = data
+            table_data[table] = data_to_dict(data)
 
     # We don't fail if at least one table is found. While the client should
     # never request an unknown table, it will not error if it doesn't receive
@@ -50,7 +52,7 @@ def data(tables, start, end):
     
     return json.jsonify(table_data)
 
-def get_data(db, table, start, end):
+def http_csv(db, table, start, end):
     name = "%s_%s" % (start, end)
     cached = cache.get(name)
     if cached is not None:
