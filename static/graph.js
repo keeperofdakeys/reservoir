@@ -1,12 +1,7 @@
-var REQUESTS = [];
-var COUNT = 0;
-var TOTAL = 0;
+var REQUEST = undefined;
 
-function clear_requests() {
-  for( var i=0; i<REQUESTS.length; i++ ) {
-    REQUESTS[i].abort();
-  }
-  REQUESTS = [];
+function clear_request() {
+  REQUEST = undefined;
 }
 
 function clear_view() {
@@ -74,15 +69,25 @@ function get_range(period) {
 
 var time_offset = moment().zone()*60;
 
-function parse_row(cur_val, index, arr) {
-  items = cur_val.split(",");
+function parse_row(time, value) {
+  item = new Array(2);
   // Account for timezone, by adding negative timezone offset.
-  items[0] = parseInt(items[0]) - time_offset;
-  items[1] = parseFloat(items[1]);
-  return items;
+  item[0] = parseInt(time) - time_offset;
+  item[1] = parseFloat(value);
+  return item;
 }
 
-function send_request(data_list, source, name, date_range) {
+function send_request(tables, date_range, data_list) {
+  var request_str;
+  if( tables.length == 0 ) {
+    return;
+  } else {
+    request_str = tables[0].key;
+    for( var i=1; i<tables.length; i++ ) {
+      request_str = request_str.concat("+", tables[i].key);
+    }
+  }
+    
   if( date_range.length < 2 ) {
     start_time = "start";
     end_time = "end";
@@ -97,9 +102,9 @@ function send_request(data_list, source, name, date_range) {
     }
   }
   var request = new XMLHttpRequest();
-  REQUESTS.push(request);
+  REQUEST = request;
   request.open("GET", 
-      "".concat("data/", source, "/", start_time, "/", end_time, "/")
+      "".concat("data/", request_str, "/", start_time, "/", end_time, "/")
       );
   request.onreadystatechange = open_data;
   request.send();
@@ -107,33 +112,37 @@ function send_request(data_list, source, name, date_range) {
   function open_data() {
     if( request.readyState === 4 &&
         ( request.status >= 200 && request.status <= 400 ) ) {
-      var response = request.responseText.split("\n");
-      var data = [];
-      for( var i=0; i<response.length; i++ ) {
-        data.push(parse_row(response[i]));
-      }
-      data_list.push( {
-          label: name,
+      var response = JSON.parse(request.responseText);
+      for( var i=0; i<tables.length; i++ ) {
+        var item = tables[i];
+        if( !(item.key in response) ) {
+          continue;
+        }
+        var data = [];
+        var res_data = response[item.key];
+        for( var j in res_data ) {
+          data.push(parse_row(j, res_data[j]));
+        }
+        data_list.push( {
+          label: item.name,
           data: data
-        });
-      COUNT++;
+        } );
+      }
       draw_graph(data_list);
     }
   }
 }
 
 function setup_graph() {
-  clear_requests();
+  clear_request();
   var period = document.getElementById("period").value;
   var date_range = get_range(period);
   if( date_range === undefined ) {
     return;
   }
-  var sources = [];
+  var tables = [];
   var data_list = [];
   var checkboxes = document.getElementsByTagName("input");
-  COUNT = 0;
-  TOTAL = 0;
   for( var i=0; i<checkboxes.length; i++ ) {
     var node = checkboxes.item(i);
     if( node.type !== "checkbox" ) {
@@ -144,15 +153,14 @@ function setup_graph() {
     if( !node.checked ) {
       continue;
     }
-    TOTAL++;
-    send_request(data_list, table_key, table_name, date_range);
+    tables.push({key: table_key, name: table_name, data: []});
+
   }
+
+  send_request(tables, date_range, data_list);
 }
 
 function draw_graph(data_list) {
-  if( COUNT < TOTAL ) {
-    return;
-  }
   $.plot("#plot", data_list, {
     series: {
       points: {

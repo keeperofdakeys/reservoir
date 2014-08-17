@@ -49,3 +49,12 @@ def get_csv(database, table, date_start=None, date_end=None):
                 reduce_data(unixtime_transform(results), date_start, date_end)
                 )
         return csvfile.getvalue()
+
+def get_dict(database, table, date_start=None, date_end=None):
+    timezone = database.tables[table]["timezone"]
+    if date_end is None or date_end > datetime.now(pytz.timezone(timezone)):
+        date_end = datetime.now(pytz.timezone(timezone))
+    results = database.load_data_generator(table, date_start, date_end)
+
+    data = reduce_data(unixtime_transform(results), date_start, date_end)
+    return dict((item[0], item[1]) for item in data)
