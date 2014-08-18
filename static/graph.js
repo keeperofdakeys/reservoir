@@ -1,10 +1,15 @@
+var TIME_OFFSET = moment().zone()*60;
 var REQUEST = undefined;
+var DATA = undefined;
+
 
 function clear_request() {
   REQUEST = undefined;
+  DATA = undefined;
 }
 
 function clear_view() {
+  clear_request();
   var checkboxes = document.getElementsByTagName("input");
   for( var i=0; i<checkboxes.length; i++ ) {
     var node = checkboxes.item(i);
@@ -67,13 +72,11 @@ function get_range(period) {
   return [start, end];
 }
 
-var time_offset = moment().zone()*60;
-
 function parse_row(item) {
   var time = item[0];
   var value = item[1];
   // Account for timezone, by adding negative timezone offset.
-  item[0] = parseInt(time) - time_offset;
+  item[0] = parseInt(time) - TIME_OFFSET;
   item[1] = parseFloat(value);
   return item;
 }
@@ -129,7 +132,8 @@ function send_request(tables, date_range, data_list) {
           data: data
         } );
       }
-      draw_graph(data_list);
+      DATA = data_list;
+      draw_graph();
     }
   }
 }
@@ -161,7 +165,11 @@ function setup_graph() {
   send_request(tables, date_range, data_list);
 }
 
-function draw_graph(data_list) {
+function draw_graph() {
+  if( DATA == undefined ) {
+    return;
+  }
+  data_list = DATA;
   $.plot("#plot", data_list, {
     series: {
       points: {
@@ -259,7 +267,7 @@ function tick_generator(axis) {
 function date_formatter(date) {
   // Data is no longer in UTC but local timezone. Moment expects UTC, so add
   // the negative timezone offset (bloody javascript).
-  return moment.unix(date + time_offset).format("DD/MM/YYYY HH:mm:ss");
+  return moment.unix(date + TIME_OFFSET).format("DD/MM/YYYY HH:mm:ss");
 }
 
 function tick_formatter(value, axis) {
@@ -270,7 +278,7 @@ function tick_formatter(value, axis) {
   }
   // Data is no longer in UTC but local timezone. Moment expects UTC, so add
   // the negative timezone offset (bloody javascript).
-  return moment.unix(value + time_offset).format("DD/MM/YY");
+  return moment.unix(value + TIME_OFFSET).format("DD/MM/YY");
 }
 
 function hide() {
@@ -280,6 +288,7 @@ function hide() {
   checkboxes.style.display = "none";
   hide_button.style.display = "none";
   show_button.style.display = "inline";
+  draw_graph();
 }
 
 function show() {
@@ -289,4 +298,5 @@ function show() {
   checkboxes.style.display = "block";
   hide_button.style.display = "inline";
   show_button.style.display = "none";
+  draw_graph();
 }
