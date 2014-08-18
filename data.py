@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 import sqlite3
-import numpy
 import pytz
 
 def to_unixtime(date):
@@ -166,7 +165,6 @@ def get_data(database, table, date_start=None, date_end=None):
     data = []
     last_time = 0
     for raw_data in results:
-        #proc_data = numpy.array(raw_data)
         for item in raw_data:
             if item[0] - last_time < data_period:
                 continue
