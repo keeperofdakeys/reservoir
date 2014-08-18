@@ -69,8 +69,9 @@ function get_range(period) {
 
 var time_offset = moment().zone()*60;
 
-function parse_row(time, value) {
-  item = new Array(2);
+function parse_row(item) {
+  var time = item[0];
+  var value = item[1];
   // Account for timezone, by adding negative timezone offset.
   item[0] = parseInt(time) - time_offset;
   item[1] = parseFloat(value);
@@ -120,8 +121,8 @@ function send_request(tables, date_range, data_list) {
         }
         var data = [];
         var res_data = response[item.key];
-        for( var j in res_data ) {
-          data.push(parse_row(j, res_data[j]));
+        for( var j=0; j<res_data.length; j++ ) {
+          data.push(parse_row(res_data[j]));
         }
         data_list.push( {
           label: item.name,

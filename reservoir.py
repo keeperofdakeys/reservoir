@@ -37,12 +37,11 @@ def http_json(tables, start, end):
     table_set = set()
     table_data = dict()
     for table in table_list:
-        import time
-        print(time.time())
         if table in db.tables:
             table_set.add(table)
             data = get_data(db, table, start, end)
-            table_data[table] = data_to_dict(data)
+            table_data[table] = data
+
 
     # We don't fail if at least one table is found. While the client should
     # never request an unknown table, it will not error if it doesn't receive
