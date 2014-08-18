@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from datetime import datetime, timedelta
-from data import Database, from_unixtime, get_data, data_to_dict
+from data import Database, from_unixtime, get_data
 from flask import Flask, abort, json
-from werkzeug.contrib.cache import FileSystemCache
+from werkzeug.contrib.cache import FileSystemCache, SimpleCache
 from jinja2 import Environment, PackageLoader
 from csv_lib import get_csv
 import os
@@ -14,7 +14,7 @@ HERE = os.path.dirname(__file__)
 CACHE_DIR=os.path.join(HERE, "cache")
 DATABASE=os.path.join(HERE, "update.db")
 TEMPLATES=os.path.join(HERE, "templates")
-cache = FileSystemCache(CACHE_DIR, threshold=100, default_timeout=CACHE_TIMEOUT, mode=600)
+cache = FileSystemCache(CACHE_DIR, threshold=100, default_timeout=CACHE_TIMEOUT)
 
 env = Environment(loader=PackageLoader(__name__, "templates"))
 
@@ -39,8 +39,15 @@ def http_json(tables, start, end):
     for table in table_list:
         if table in db.tables:
             table_set.add(table)
-            data = get_data(db, table, start, end)
-            table_data[table] = data
+
+            name = get_cache_name(table, start, end)
+            cached = cache.get(name)
+            if cached is not None:
+                table_data[table] = cached
+            else:
+                data = get_data(db, table, start, end)
+                table_data[table] = data
+                cache.set(name, data)
 
 
     # We don't fail if at least one table is found. While the client should
@@ -50,6 +57,18 @@ def http_json(tables, start, end):
         abort(404)
     
     return json.jsonify(table_data)
+
+def get_cache_name(table, start, end):
+    if start is None:
+        start_str = "start"
+    else:
+        start_str = str(int(start/3600))
+
+    if end is None:
+        end_str = "end"
+    else:
+        end_str = str(int(end/3600))
+    return "%s_%s_%s" % (table, start_str, end_str)
 
 def http_csv(db, table, start, end):
     name = "%s_%s" % (start, end)

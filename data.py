@@ -145,7 +145,7 @@ class Database():
         # Return min and max dates. Client must use __next__ manually for these.
         yield queries[0].fetchone()
         yield queries[1].fetchone()
-
+        
         while True:
             result_group = queries[2].fetchmany(100)
             if len(result_group) == 0:
@@ -173,9 +173,6 @@ def get_data(database, table, date_start=None, date_end=None):
             data.append(item)
             last_time = item[0]
     return data
-
-def data_to_dict(data):
-    return dict((item[0], item[1]) for item in data)
 
 def get_data_period(time_start, time_end):
     time_range = timedelta(seconds=(time_end - time_start))
