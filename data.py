@@ -159,6 +159,9 @@ def get_data(database, table, date_start=None, date_end=None):
     try:
         min_val = results.__next__()
         max_val = results.__next__()
+        # Database returned None => we have no data.
+        if min_val == (None,) or max_val == (None,):
+            return []
     except StopIteration:
         return []
     data_period = get_data_period(min_val[0], max_val[0]).total_seconds()
