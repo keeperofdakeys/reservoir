@@ -153,8 +153,8 @@ class Database():
 
 def get_data(database, table, date_start=None, date_end=None):
     timezone = database.tables[table]["timezone"]
-    if date_end is None or date_end > datetime.now(pytz.timezone(timezone)):
-        date_end = datetime.now(pytz.timezone(timezone))
+    if date_end is None or date_end > to_unixtime(datetime.now(pytz.timezone(timezone))):
+        date_end = to_unixtime(datetime.now(pytz.timezone(timezone)))
     results = database.load_data(table, date_start, date_end)
     try:
         min_val = results.__next__()
